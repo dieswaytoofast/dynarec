@@ -1,0 +1,11 @@
+{application, dynarec,
+ [
+  {description, "Parse transform for records"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {env, []}
+ ]}.
