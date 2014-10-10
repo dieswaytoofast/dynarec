@@ -11,7 +11,7 @@
 %%% get_value(field_name, Record) ->
 %%%     Record#record_name.field_name.
 %%%
-%% set_value(field_name, Value, Record) when is_record(Record, record_name) ->
+%% set_value(field_name, Value, Record) ->
 %%     Record#record_name{field_name = Value}.
 %%
 %%% records() ->
@@ -79,7 +79,7 @@ gen_field_getter(Tuples) ->
     {function, 0, get_value, 2, lists:reverse(List)}.
 
 %%  erl_parse:parse_form(element(2,element(2,
-%%      erl_scan:tokens([],"get_position(field_name, Record) when is_record(Record, record_name) -> #record_name.field_name.\n",0)))).
+%%      erl_scan:tokens([],"get_position(field_name, Record) -> #record_name.field_name.\n",0)))).
 
 %% @doc Generates each clause of the field_getter function with the form:
 %% <pre>
@@ -90,15 +90,15 @@ gen_field_getter(Tuples) ->
 %% clause with the following expression on the Erlang shell:</p>
 %% <pre>
 %%  erl_parse:parse_form(element(2,element(2,
-%%      erl_scan:tokens([],"get_value(field_name, Record) when is_record(Record, record_name) -> Record#record_name.field_name.\n",0)))).
+%%      erl_scan:tokens([],"get_value(field_name, Record) -> Record#record_name.field_name.\n",0)))).
 %% </pre>
 %% <p>It first tokenizes the string as code, and then builds the syntactic tree.</p>
 gen_field_getter_clause(RecordName, FieldName) ->
     {clause, 0,
      %% (field_name, Record)
      [{atom, 0, FieldName}, {var, 0, 'Record'}],
-     %% when is_record(Record, record_name)
-     [[{call, 0, {atom, 0, is_record}, [{var, 0, 'Record'}, {atom, 0, RecordName}]}]],
+     %% guard
+     [],
      %% Record#record_name.field_name
      [{record_field, 0, {var, 0, 'Record'}, RecordName, {atom, 0, FieldName}}]}.
 
@@ -115,14 +115,14 @@ gen_setter(Tuples) ->
 
 %% @doc Generates each clause of the setter function with the form:
 %% <pre>
-%% set_value(field_name, Value, Record) when is_record(Record, record_name) ->
+%% set_value(field_name, Value, Record)  ->
 %%     Record#record_name{field_name = Value}.
 %% </pre>
 %% <p>It returns code in the syntactic tree form. I obtained the form of the
 %% clause with the following expression on the Erlang shell:</p>
 %% <pre>
 %%  erl_parse:parse_form(element(2,element(2,
-%%      erl_scan:tokens([],"set_value(field_name, Value, Record) when is_record(Record, record_name) -> "
+%%      erl_scan:tokens([],"set_value(field_name, Value, Record) -> "
 %%                         "Record#record_name{field_name = Value}.\n",0)))).
 %% </pre>
 %% <p>It first tokenizes the string as code, and then builds the syntactic tree.</p>
@@ -130,8 +130,8 @@ gen_setter_clause(RecordName, FieldName) ->
     {clause, 0,
      %% (field_name, Value, Record)
      [{atom, 0, FieldName}, {var, 0, 'Value'}, {var, 0, 'Record'}],
-     %% when is_record(Record, record_name)
-     [[{call, 0, {atom, 0, is_record}, [{var,0,'Record'}, {atom, 0, RecordName}]}]],
+     %% guard
+     [],
      %% Record#record_name{field_name = Value}
      [{record, 0, {var, 0, 'Record'}, RecordName, [{record_field, 0, {atom, 0, FieldName}, {var, 0, 'Value'}}]}]}.
 
