@@ -96,7 +96,7 @@ gen_field_getter(Tuples) ->
 gen_field_getter_clause(RecordName, FieldName) ->
     {clause, 0,
      %% (field_name, Record)
-     [{atom, 0, FieldName}, {var, 0, 'Record'}],
+     [{atom, 0, FieldName}, {match, 0, {var, 0, 'Record'}, {record, 0, RecordName, []}}],
      %% guard
      [],
      %% Record#record_name.field_name
@@ -129,7 +129,7 @@ gen_setter(Tuples) ->
 gen_setter_clause(RecordName, FieldName) ->
     {clause, 0,
      %% (field_name, Value, Record)
-     [{atom, 0, FieldName}, {var, 0, 'Value'}, {var, 0, 'Record'}],
+     [{atom, 0, FieldName}, {var, 0, 'Value'}, {match, 0, {var, 0, 'Record'}, {record, 0, RecordName, []}}],
      %% guard
      [],
      %% Record#record_name{field_name = Value}

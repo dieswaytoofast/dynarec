@@ -10,7 +10,7 @@ It generates and exports the following functions:
 get_value(field_name, Record) ->
     Record#record_name.field_name.
 
-set_value(field_name, Value, Record) when is_record(Record, record_name) ->
+set_value(field_name, Value, Record = #record_name{}) ->
     Record#record_name{field_name = Value}.
 
 records() ->
