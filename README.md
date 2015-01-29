@@ -7,10 +7,10 @@ all records declared within a module.
 It generates and exports the following functions:
 
 ```erlang
-get_value(record_name, field_name, Record) ->
+get_value(field_name, Record) ->
     Record#record_name.field_name.
 
-set_value(record_name, field_name, Value, Record) when is_record(Record, record_name) ->
+set_value(field_name, Value, Record = #record_name{}) ->
     Record#record_name{field_name = Value}.
 
 records() ->
