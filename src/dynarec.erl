@@ -64,8 +64,9 @@ get_tuples({attribute,_,record, {Name, Fields}}) ->
 get_field_name({record_field, _, {atom, _, FieldName}, _Default}) ->
     FieldName;
 get_field_name({record_field, _, {atom, _, FieldName}}) ->
-    FieldName.
-
+    FieldName;
+get_field_name({typed_record_field, RecordField, _Typed}) ->
+    get_field_name(RecordField).
 
 
 %% @doc Generates the field_getter function for all {record, field} tuples.
