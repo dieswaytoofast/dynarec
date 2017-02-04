@@ -201,14 +201,13 @@ gen_new_record_clause(RecordName) ->
 
 %% @doc Adds the getter and setter functions to the list of exported functions
 add_exports(Forms) ->
-    {value, {attribute, N, export, Exports}} = lists:keysearch(export, 3, Forms),
-
-    lists:keyreplace(export, 3, Forms, {attribute, N, export, [{records, 0},
-                                                               {fields, 1},
-                                                               {new_record, 1},
-                                                               {get_value, 2},
-                                                               {set_value, 3} |
-                                                               Exports]}).
+    case lists:keysearch(export, 3, Forms) of
+        {value, {attribute, N, export, Exports}} ->
+            lists:keyreplace(export, 3, Forms,
+                {attribute, N, export, [{records, 0}, {fields, 1},
+                {new_record, 1}, {get_value, 2}, {set_value, 3} | Exports]});
+        false -> Forms
+    end.
 
 %% gen_atom_list(Names, Acc) ->
 %%     lists:reverse(gen_reversed_atom_list(Names, Acc)).
