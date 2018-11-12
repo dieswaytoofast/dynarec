@@ -22,6 +22,12 @@
 %%%
 %%% new_record(record_name) ->
 %%%     #record_name{}.
+%%%
+%%% from_map(record_name, Map) ->
+%%%     #record_name{...}.
+%%%
+%%% to_map(Record) ->
+%%%     #{...}.
 %%% </pre>
 %%%
 %%% <p>It runs at compile time using following preprocessor directive:</p>
@@ -52,7 +58,9 @@ parse_transform(Forms, _Options) ->
                                [gen_fields(Tuples) |
                                 [gen_field_getter(Tuples) |
                                  [gen_setter(Tuples) |
-                                  lists:reverse(Forms)]]]]]),
+                                  [gen_to_map(Records) |
+                                   [gen_from_map(Records) |
+                                    lists:reverse(Forms)]]]]]]]),
     add_exports(NewForms).
 
 
@@ -199,14 +207,59 @@ gen_new_record(Tuples) ->
 gen_new_record_clause(RecordName) ->
     {clause, 0, [{atom, 0, RecordName}], [], [{record, 0, RecordName, []}]}.
 
+field_to_name_and_default({record_field, _, {atom, _, FieldName}, Default}) ->
+    {FieldName, Default};
+field_to_name_and_default({record_field, _, {atom, _, FieldName}}) ->
+    {FieldName, {atom, 0, undefined}};
+field_to_name_and_default({typed_record_field, RecordField, _Typed}) ->
+    field_to_name_and_default(RecordField).
 
-%% @doc Adds the getter and setter functions to the list of exported functions
+%% @doc Generate the from_map/2 function
+gen_from_map(Records) ->
+    List = lists:foldl(fun(Record, Acc) -> [gen_from_map_clause(Record) | Acc] end, [], Records),
+    {function, 0, from_map, 2, lists:reverse(List)}.
+
+gen_from_map_clause({attribute, _, record, {Name, Fields}}) ->
+    FieldNamesWithDefaults = [field_to_name_and_default(Field) || Field <- Fields],
+    MapName =
+        case Fields of
+            [] ->
+                '_Map';
+            _ ->
+                'Map'
+        end,
+    {clause, 0, [{atom, 0, Name}, {var, 0, MapName}], [],
+     [{record, 0, Name,
+       [{record_field, 0, {atom, 0, FieldName}, gen_record_field_from_map(FieldName, FieldDefault, MapName)}
+        || {FieldName, FieldDefault} <- FieldNamesWithDefaults]}]}.
+
+gen_record_field_from_map(FieldName, FieldDefault, MapName) ->
+    {'case', 0, {call, 0, {remote, 0, {atom, 0, maps}, {atom, 0, find}}, [{atom, 0, FieldName}, {var, 0, MapName}]},
+     [{clause, 0, [{tuple, 0, [{atom, 0, ok}, {var, 0, 'Val'}]}], [], [{var, 0, 'Val'}]},
+      {clause, 0, [{atom, 0, error}], [], [FieldDefault]}]}.
+
+%% @doc Generate the to_map/1 function
+gen_to_map(Records) ->
+    List = lists:foldl(fun(Record, Acc) -> [gen_to_map_clause(Record) | Acc] end, [], Records),
+    {function, 0, to_map, 1, lists:reverse(List)}.
+
+gen_to_map_clause({attribute, _, record, {Name, Fields}}) ->
+    FieldNamesWithDefaults = [field_to_name_and_default(Field) || Field <- Fields],
+    {clause, 0, [{var, 0, 'Record'}], [[{call, 0, {atom, 0, is_record}, [{var, 0, 'Record'}, {atom, 0, Name}]}]],
+     [{map, 0,
+       [{map_field_assoc, 0,
+         {atom, 0, FieldName},
+         {record_field, 0, {var, 0, 'Record'}, Name, {atom, 0, FieldName}}}
+        || {FieldName, _} <- FieldNamesWithDefaults]}]}.
+
+%% @doc Adds generated functions to the list of exported functions
 add_exports(Forms) ->
     case lists:keysearch(export, 3, Forms) of
         {value, {attribute, N, export, Exports}} ->
             lists:keyreplace(export, 3, Forms,
-                {attribute, N, export, [{records, 0}, {fields, 1},
-                {new_record, 1}, {get_value, 2}, {set_value, 3} | Exports]});
+                {attribute, N, export,
+                 [{records, 0}, {fields, 1}, {from_map, 2}, {to_map, 1},
+                  {new_record, 1}, {get_value, 2}, {set_value, 3} | Exports]});
         false -> Forms
     end.
 
