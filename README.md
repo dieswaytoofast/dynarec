@@ -21,6 +21,12 @@ fields(record_name) ->
 
 new_record(record_name) ->
     #record_name{}.
+
+from_map(record_name, Map) ->
+    #record_name{...}.
+
+to_map(Record) ->
+    #{...}.
 ```
 
 It runs at compile time using following preprocessor directive:
